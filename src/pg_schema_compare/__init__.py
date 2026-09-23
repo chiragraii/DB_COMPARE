@@ -1,0 +1,6 @@
+"""PostgreSQL schema comparison CLI."""
+
+from pg_schema_compare.cli import main
+
+__all__ = ["main"]
+__version__ = "0.1.0"

@@ -1,0 +1,33 @@
+[project]
+name = "pg-schema-compare"
+version = "0.1.0"
+description = "Compare PostgreSQL schemas and apply missing primary/foreign keys"
+readme = "README.md"
+authors = [
+    { name = "Chirag Manohar Rai", email = "chiragmanoharrai@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "openpyxl>=3.1.5",
+    "psycopg[binary]>=3.2.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+
+[project.scripts]
+pg-schema-compare = "pg_schema_compare.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12.16,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
