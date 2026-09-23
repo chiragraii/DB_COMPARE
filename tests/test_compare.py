@@ -116,10 +116,12 @@ def test_apply_execute_with_recording_executor():
 def test_console_report_contains_sections():
     result = compare_snapshots(fixture_db1(), fixture_db2(), mode="full")
     text = format_console_report(result)
-    assert "SUMMARY" in text
-    assert "ONLY IN DB-1" in text
-    assert "ONLY IN DB-2" in text
-    assert "TYPE DIFFERENCE" in text
+    assert "Schema comparison report" in text
+    assert "Summary" in text
+    assert "Only in DB-1" in text
+    assert "Only in DB-2" in text
+    assert "Different definition" in text or "Different" in text
+    assert "How to read this report" in text
 
 
 def test_excel_report(tmp_path: Path):
