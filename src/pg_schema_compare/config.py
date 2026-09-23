@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import load_dotenv
+from psycopg.conninfo import make_conninfo
 
 
 @dataclass
@@ -20,9 +21,13 @@ class DbConfig:
     label: str = "DB"
 
     def dsn(self) -> str:
-        return (
-            f"host={self.host} port={self.port} dbname={self.database} "
-            f"user={self.user} password={self.password}"
+        # Quote/escape values so spaces and special chars in password/dbname work.
+        return make_conninfo(
+            host=self.host,
+            port=self.port,
+            dbname=self.database,
+            user=self.user,
+            password=self.password,
         )
 
     def display(self) -> str:
