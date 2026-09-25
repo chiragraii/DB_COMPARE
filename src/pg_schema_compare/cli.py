@@ -19,27 +19,51 @@ from pg_schema_compare.fixtures import load_fixture_pair
 from pg_schema_compare.introspect import connect, fetch_snapshot
 from pg_schema_compare.report import format_apply_result, format_console_report
 
+# Short + long command names (normalized in main).
+COMMAND_ALIASES = {
+    "c": "compare",
+    "compare": "compare",
+    "a": "apply",
+    "apply": "apply",
+    "apply-missing-keys": "apply",
+}
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="pg-schema-compare",
+        prog="dbc",
         description=(
             "Compare PostgreSQL schemas between two databases and optionally "
-            "add missing primary/foreign keys."
+            "add missing primary/foreign keys.\n\n"
+            "Quick start (loads .env automatically):\n"
+            "  dbc              full compare\n"
+            "  dbc keys         compare primary + foreign keys only\n"
+            "  dbc apply        preview missing PK/FK SQL (dry-run)\n"
+            "  dbc apply --yes  apply missing PK/FK to the target DB"
         ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+    # Allow: dbc | dbc keys | dbc apply | dbc c | dbc a
+    command_choices = sorted(set(COMMAND_ALIASES) | set(ONLY_MODES.keys()))
     parser.add_argument(
         "command",
         nargs="?",
         default="compare",
-        choices=["compare", "apply-missing-keys"],
-        help="compare (default) or apply-missing-keys",
+        choices=command_choices,
+        help="compare/c (default), apply/a, or a mode name like keys/tables",
     )
     parser.add_argument(
+        "mode_or_extra",
+        nargs="?",
+        default=None,
+        help="Optional: mode name after compare (e.g. dbc compare keys)",
+    )
+    parser.add_argument(
+        "-m",
         "--mode",
         default="full",
         choices=sorted(ONLY_MODES.keys()),
-        help="Comparison scope (default: full). Use primary_keys / foreign_keys / keys for focused runs.",
+        help="Comparison scope (default: full). Examples: keys, primary_keys, tables",
     )
     parser.add_argument(
         "--mock",
@@ -47,28 +71,34 @@ def build_parser() -> argparse.ArgumentParser:
         help="Use built-in fixture metadata instead of live PostgreSQL connections",
     )
     parser.add_argument(
+        "-e",
         "--env-file",
         default=None,
-        help="Path to .env file (default: load .env from cwd if present)",
+        help="Path to .env file (default: load .env from current folder if present)",
     )
     parser.add_argument(
+        "-x",
         "--excel",
-        default="schema_diff_report.xlsx",
-        help="Excel output path (default: schema_diff_report.xlsx)",
+        default="reports/schema_diff.xlsx",
+        help="Excel output path (default: reports/schema_diff.xlsx)",
     )
     parser.add_argument(
+        "-n",
         "--no-excel",
         action="store_true",
         help="Skip Excel report generation",
     )
     parser.add_argument(
+        "-s",
         "--source",
         choices=["db1", "db2"],
         default="db1",
-        help="For apply-missing-keys: side that owns the keys to copy (default: db1)",
+        help="For apply: side that owns the keys to copy (default: db1)",
     )
     parser.add_argument(
         "--execute",
+        "--yes",
+        dest="execute",
         action="store_true",
         help="Actually run ADD CONSTRAINT DDL on the target DB (default is dry-run)",
     )
@@ -89,6 +119,21 @@ def build_parser() -> argparse.ArgumentParser:
         parser.add_argument(f"--db{side}-label", default=None)
 
     return parser
+
+
+def _normalize_args(args: argparse.Namespace) -> argparse.Namespace:
+    first = args.command
+    if first in ONLY_MODES:
+        # dbc keys  ->  compare with mode=keys
+        args.mode = first
+        args.command = "compare"
+    else:
+        args.command = COMMAND_ALIASES[first]
+
+    extra = args.mode_or_extra
+    if extra and args.command == "compare" and extra in ONLY_MODES:
+        args.mode = extra
+    return args
 
 
 def _load_snapshots(args: argparse.Namespace):
@@ -192,7 +237,7 @@ def cmd_apply_missing_keys(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
-    args = parser.parse_args(argv)
+    args = _normalize_args(parser.parse_args(argv))
     try:
         if args.command == "compare":
             code = cmd_compare(args)

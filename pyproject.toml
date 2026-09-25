@@ -17,6 +17,8 @@ dependencies = [
 dev = ["pytest>=8.0.0"]
 
 [project.scripts]
+dbc = "pg_schema_compare.cli:main"
+dbcompare = "pg_schema_compare.cli:main"
 pg-schema-compare = "pg_schema_compare.cli:main"
 
 [build-system]
