@@ -124,6 +124,23 @@ def test_console_report_contains_sections():
     assert "How to read this report" in text
 
 
+def test_cli_short_aliases_and_mode_shortcut():
+    from pg_schema_compare.cli import build_parser, _normalize_args
+
+    args = _normalize_args(build_parser().parse_args(["keys", "-n", "--mock"]))
+    assert args.command == "compare"
+    assert args.mode == "keys"
+    assert args.no_excel is True
+
+    args = _normalize_args(build_parser().parse_args(["a", "-s", "db2"]))
+    assert args.command == "apply"
+    assert args.source == "db2"
+
+    args = _normalize_args(build_parser().parse_args(["apply-missing-keys", "--yes"]))
+    assert args.command == "apply"
+    assert args.execute is True
+
+
 def test_excel_report(tmp_path: Path):
     db1, db2 = fixture_db1(), fixture_db2()
     result = compare_snapshots(db1, db2, mode="full")
