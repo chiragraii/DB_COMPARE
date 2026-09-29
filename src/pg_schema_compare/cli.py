@@ -162,9 +162,18 @@ def _load_snapshots(args: argparse.Namespace):
         label=args.db2_label,
         env_file=args.env_file,
     )
-    snap1 = fetch_snapshot(cfg1)
-    snap2 = fetch_snapshot(cfg2)
-    return snap1, snap2
+    return _fetch(cfg1), _fetch(cfg2)
+
+
+def _fetch(cfg):
+    print(f"Connecting to {cfg.display()} ...")
+    try:
+        return fetch_snapshot(cfg)
+    except Exception as exc:  # noqa: BLE001
+        raise RuntimeError(
+            f"Could not connect to {cfg.label} at {cfg.host}:{cfg.port} "
+            f"(database '{cfg.database}'): {exc}"
+        ) from exc
 
 
 def cmd_compare(args: argparse.Namespace) -> int:

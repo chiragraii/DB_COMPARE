@@ -141,6 +141,36 @@ def test_cli_short_aliases_and_mode_shortcut():
     assert args.execute is True
 
 
+def test_db1_and_db2_can_use_different_hosts(tmp_path: Path, monkeypatch):
+    from pg_schema_compare.config import load_db_config
+
+    env_file = tmp_path / "test.env"
+    env_file.write_text(
+        "DB1_HOST=192.168.1.10\nDB1_PORT=5432\nDB1_NAME=source_db\n"
+        "DB2_HOST=10.0.0.25\nDB2_PORT=6543\nDB2_NAME=target_db\n",
+        encoding="utf-8",
+    )
+    for side in ("1", "2"):
+        for key in ("HOST", "PORT", "NAME"):
+            monkeypatch.delenv(f"DB{side}_{key}", raising=False)
+
+    cfg1 = load_db_config("1", env_file=env_file)
+    cfg2 = load_db_config("2", env_file=env_file)
+
+    assert (cfg1.host, cfg1.port, cfg1.database) == ("192.168.1.10", 5432, "source_db")
+    assert (cfg2.host, cfg2.port, cfg2.database) == ("10.0.0.25", 6543, "target_db")
+    assert "host=192.168.1.10" in cfg1.dsn()
+    assert "host=10.0.0.25" in cfg2.dsn()
+    assert "connect_timeout=10" in cfg1.dsn()
+
+
+def test_cli_host_flags_override_env(tmp_path: Path):
+    from pg_schema_compare.config import load_db_config
+
+    cfg = load_db_config("2", host="172.16.0.5", env_file=tmp_path / "missing.env")
+    assert cfg.host == "172.16.0.5"
+
+
 def test_excel_report(tmp_path: Path):
     db1, db2 = fixture_db1(), fixture_db2()
     result = compare_snapshots(db1, db2, mode="full")

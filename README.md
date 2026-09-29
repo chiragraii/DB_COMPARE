@@ -37,7 +37,7 @@ cp .env.example .env
 
 Variables: `DB1_HOST`, `DB1_PORT`, `DB1_NAME`, `DB1_USER`, `DB1_PASSWORD`, `DB1_SCHEMA`, `DB1_LABEL` (and the same for `DB2_*`).
 
-DB1 and DB2 can use **different IPs/hosts**. You can also pass `--db1-host`, `--db1-port`, etc.
+DB1 and DB2 can use **different IPs/hosts**. You can also pass `--db1-host`, `--db1-port`, etc. Optional `DB1_CONNECT_TIMEOUT` / `DB2_CONNECT_TIMEOUT` (seconds, default 10) stop an unreachable remote server from hanging the run.
 
 ## Quick commands (recommended)
 

@@ -19,15 +19,18 @@ class DbConfig:
     password: str
     schema: str = "public"
     label: str = "DB"
+    connect_timeout: int = 10
 
     def dsn(self) -> str:
         # Quote/escape values so spaces and special chars in password/dbname work.
+        # connect_timeout stops an unreachable remote host from hanging indefinitely.
         return make_conninfo(
             host=self.host,
             port=self.port,
             dbname=self.database,
             user=self.user,
             password=self.password,
+            connect_timeout=self.connect_timeout,
         )
 
     def display(self) -> str:
@@ -68,6 +71,7 @@ def load_db_config(
     resolved_password = password if password is not None else (_env(f"{prefix}PASSWORD", "") or "")
     resolved_schema = schema or _env(f"{prefix}SCHEMA", "public")
     resolved_label = label or _env(f"{prefix}LABEL", f"DB-{side}")
+    resolved_timeout = int(_env(f"{prefix}CONNECT_TIMEOUT", "10") or "10")
 
     assert resolved_host and resolved_db and resolved_user and resolved_schema
     return DbConfig(
@@ -78,4 +82,5 @@ def load_db_config(
         password=resolved_password,
         schema=resolved_schema,
         label=resolved_label or f"DB-{side}",
+        connect_timeout=resolved_timeout,
     )
